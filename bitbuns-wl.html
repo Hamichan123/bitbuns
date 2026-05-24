@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BitBuns — WL Application</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f3e9d2;
+    --cream-deep: #e8d9b3;
+    --ink: #1a1410;
+    --ink-soft: #2d2419;
+    --pink: #ff6b9d;
+    --pink-deep: #e54887;
+    --electric: #00ffa3;
+    --gold: #f5b800;
+    --bun: #c9a47b;
+    --shadow: rgba(26, 20, 16, 0.9);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* binary noise background like the banner */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(255, 107, 157, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 85% 70%, rgba(0, 255, 163, 0.06) 0%, transparent 40%),
+      repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(26, 20, 16, 0.015) 2px, rgba(26, 20, 16, 0.015) 4px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* floating binary digits */
+  .binary-rain {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.15;
+  }
+  .binary-rain span {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    animation: drift linear infinite;
+    white-space: nowrap;
+  }
+  @keyframes drift {
+    from { transform: translateY(-100px); }
+    to { transform: translateY(110vh); }
+  }
+
+  main {
+    position: relative;
+    z-index: 2;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* top bar */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
+  }
+  .topbar .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--electric);
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 8px var(--electric);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 48px;
+    position: relative;
+  }
+  .hero .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 6px 14px;
+    border-radius: 100px;
+    letter-spacing: 0.2em;
+    margin-bottom: 20px;
+    transform: rotate(-2deg);
+  }
+  .hero h1 {
+    font-family: 'Bungee', sans-serif;
+    font-size: clamp(48px, 11vw, 86px);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    position: relative;
+    display: inline-block;
+  }
+  .hero h1 .b {
+    color: var(--pink);
+    display: inline-block;
+    transform: translateY(-4px) rotate(-3deg);
+  }
+  .hero h1 .it {
+    color: var(--gold);
+    display: inline-block;
+    transform: translateY(2px) rotate(2deg);
+  }
+  .hero h1::after {
+    content: '🐰';
+    position: absolute;
+    top: -20px;
+    right: -10px;
+    font-size: 32px;
+    transform: rotate(15deg);
+    animation: wiggle 3s ease-in-out infinite;
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(15deg); }
+    50% { transform: rotate(-10deg); }
+  }
+  .hero p {
+    margin-top: 18px;
+    font-size: 17px;
+    color: var(--ink-soft);
+    font-style: italic;
+    max-width: 460px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.4;
+  }
+  .hero .stats {
+    margin-top: 24px;
+    display: inline-flex;
+    gap: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 10px 20px;
+    border-radius: 100px;
+  }
+  .hero .stats strong {
+    color: var(--electric);
+  }
+
+  /* tasks card */
+  .card {
+    background: var(--cream-deep);
+    border: 2px solid var(--ink);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 8px 8px 0 var(--ink);
+    position: relative;
+  }
+  .card-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 16px;
+    border-bottom: 2px dashed var(--ink);
+  }
+  .card-header h2 {
+    font-family: 'Bungee', sans-serif;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  .card-header .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  /* progress */
+  .progress-wrap {
+    margin: 16px 0 28px;
+    height: 10px;
+    background: var(--cream);
+    border: 1.5px solid var(--ink);
+    border-radius: 100px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--pink), var(--gold));
+    border-right: 1.5px solid var(--ink);
+    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+  }
+  .progress-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(45deg, transparent 0, transparent 4px, rgba(255,255,255,0.2) 4px, rgba(255,255,255,0.2) 8px);
+  }
+
+  /* tasks */
+  .tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--cream);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    position: relative;
+  }
+  .task:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .task.locked {
+    cursor: not-allowed;
+    opacity: 0.85;
+  }
+  .task.locked:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .task.locked .checkbox {
+    background: repeating-linear-gradient(45deg, var(--cream-deep) 0 4px, var(--cream) 4px 8px);
+  }
+  .task.unlocked:not(.done) {
+    border-color: var(--pink);
+    box-shadow: 3px 3px 0 var(--pink);
+    animation: nudge 1.4s ease-in-out infinite;
+  }
+  @keyframes nudge {
+    0%, 100% { box-shadow: 3px 3px 0 var(--pink); }
+    50% { box-shadow: 5px 5px 0 var(--pink); }
+  }
+  .task.done {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+    animation: none;
+    box-shadow: none;
+  }
+  .task.done .task-title {
+    text-decoration: line-through;
+    text-decoration-color: var(--electric);
+    text-decoration-thickness: 2px;
+    opacity: 0.7;
+  }
+
+  .checkbox {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    background: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .task.done .checkbox {
+    background: var(--electric);
+    border-color: var(--electric);
+    transform: rotate(360deg);
+  }
+  .checkbox svg {
+    width: 18px;
+    height: 18px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .task.done .checkbox svg {
+    opacity: 1;
+  }
+
+  .task-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .task-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 1.2;
+  }
+  .task-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.65;
+  }
+  .task-go {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .task.unlocked .task-go {
+    background: var(--pink);
+    color: var(--ink);
+  }
+  .task.done .task-go {
+    background: var(--cream);
+    color: var(--ink);
+  }
+  .task-go:hover {
+    background: var(--pink);
+    color: var(--ink);
+  }
+  .lock-hint {
+    position: absolute;
+    bottom: -8px;
+    left: 18px;
+    background: var(--ink);
+    color: var(--electric);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .task.shake .lock-hint {
+    opacity: 1;
+  }
+
+  .countdown-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--pink);
+    border: 2px solid var(--ink);
+    font-family: 'Bungee', sans-serif;
+    font-size: 18px;
+    color: var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+    animation: countdown-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .countdown-badge.visible {
+    display: flex;
+  }
+  .countdown-badge.go {
+    background: var(--electric);
+    animation: countdown-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes countdown-pop {
+    0% { transform: scale(0.5); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .task.shake {
+    animation: shake 0.4s ease;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  /* form section */
+  .form-section {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 2px dashed var(--ink);
+  }
+  .form-section label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
+    color: var(--ink-soft);
+  }
+  .form-section input {
+    width: 100%;
+    background: var(--cream);
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .form-section input:focus {
+    border-color: var(--pink);
+    box-shadow: 0 0 0 4px rgba(255, 107, 157, 0.2);
+  }
+  .form-section input::placeholder {
+    color: var(--ink-soft);
+    opacity: 0.5;
+  }
+
+  .submit-btn {
+    margin-top: 20px;
+    width: 100%;
+    background: var(--ink);
+    color: var(--cream);
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    padding: 18px;
+    font-family: 'Bungee', sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .submit-btn:not(:disabled):hover {
+    background: var(--pink);
+    color: var(--ink);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .submit-btn:disabled {
+    background: var(--cream);
+    color: var(--ink-soft);
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .submit-btn.success {
+    background: var(--electric);
+    color: var(--ink);
+  }
+
+  /* footer */
+  footer {
+    margin-top: 40px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
+    opacity: 0.6;
+  }
+  footer .bunnies {
+    font-size: 24px;
+    letter-spacing: 0.5em;
+    margin-bottom: 8px;
+    opacity: 0.4;
+  }
+
+  /* confetti pop */
+  @keyframes confetti-pop {
+    0% { transform: translate(0,0) scale(0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(1) rotate(var(--r)); opacity: 0; }
+  }
+  .confetti {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+    z-index: 9999;
+    animation: confetti-pop 1.2s ease-out forwards;
+  }
+
+  @media (max-width: 480px) {
+    main { padding: 20px 16px 60px; }
+    .card { padding: 20px; box-shadow: 5px 5px 0 var(--ink); }
+    .task { flex-wrap: wrap; }
+    .task-go { margin-left: auto; }
+    .hero h1::after { font-size: 24px; top: -16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="binary-rain" id="rain"></div>
+
+<main>
+  <div class="topbar">
+    <span><span class="dot"></span>WL APPLICATIONS OPEN</span>
+    <span>222 / SUPPLY</span>
+  </div>
+
+  <section class="hero">
+    <div class="badge">⚡ BASED BUNNIES ON ETH</div>
+    <h1><span class="b">B</span>it<span class="it">Buns</span></h1>
+    <p>A hyper-limited collection of 222 based bunnies coming to ETH. Complete the tasks below to secure your spot on the whitelist.</p>
+    <div class="stats">
+      <span>SUPPLY <strong>222</strong></span>
+      <span>·</span>
+      <span>WL SPOTS <strong>OPEN</strong></span>
+    </div>
+  </section>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>WL Tasks</h2>
+      <span class="count" id="count">0 / 4</span>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress"></div>
+    </div>
+
+    <div class="tasks" id="tasks">
+      <div class="task locked" data-id="follow">
+        <div class="checkbox">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#1a1410" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="task-content">
+          <span class="task-title">Follow @BitBuns_ETH</span>
+          <span class="task-sub">step 01 · mandatory</span>
+        </div>
+        <div class="countdown-badge"></div>
+        <a href="https://twitter.com/BitBuns_ETH" target="_blank" rel="noopener" class="task-go">FOLLOW →</a>
+        <span class="lock-hint">click follow first</span>
+      </div>
+
+      <div class="task locked" data-id="likert">
+        <div class="checkbox">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#1a1410" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="task-content">
+          <span class="task-title">Like + RT the pinned post</span>
+          <span class="task-sub">step 02 · engagement</span>
+        </div>
+        <div class="countdown-badge"></div>
+        <a href="https://twitter.com/BitBuns_ETH" target="_blank" rel="noopener" class="task-go">OPEN →</a>
+        <span class="lock-hint">open the post first</span>
+      </div>
+
+      <div class="task locked" data-id="reply">
+        <div class="checkbox">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#1a1410" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="task-content">
+          <span class="task-title">Reply on the pinned post</span>
+          <span class="task-sub">step 03 · tag 3 friends</span>
+        </div>
+        <div class="countdown-badge"></div>
+        <a href="https://twitter.com/BitBuns_ETH" target="_blank" rel="noopener" class="task-go">REPLY →</a>
+        <span class="lock-hint">click reply first</span>
+      </div>
+
+      <div class="task locked" data-id="quote">
+        <div class="checkbox">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#1a1410" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="task-content">
+          <span class="task-title">Quote tweet the pinned post</span>
+          <span class="task-sub">step 04 · why you want in</span>
+        </div>
+        <div class="countdown-badge"></div>
+        <a href="https://twitter.com/BitBuns_ETH" target="_blank" rel="noopener" class="task-go">QUOTE →</a>
+        <span class="lock-hint">click quote first</span>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <label for="handle">Your X/Twitter handle</label>
+      <input id="handle" type="text" placeholder="@yourhandle" autocomplete="off" />
+
+      <label for="wallet" style="margin-top:16px;">ETH wallet address</label>
+      <input id="wallet" type="text" placeholder="0x..." autocomplete="off" />
+
+      <button class="submit-btn" id="submit" disabled>SUBMIT APPLICATION</button>
+    </div>
+  </div>
+
+  <footer>
+    <div class="bunnies">🐰 🐰 🐇 🐰 🐰</div>
+    <div>BITBUNS · 222 BASED BUNNIES · ETH</div>
+  </footer>
+</main>
+
+<script>
+  // ============================================
+  // GOOGLE SHEETS WEBHOOK — paste your Apps Script URL here
+  // (see deployment instructions provided with this file)
+  // ============================================
+  const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyiyYTzoj0Jqk3EbW0r54J6Jqlr4AkA0wpzUa1SsMWaKoOxrWpQfSDOhRCDFKkqUaLP/exec';
+
+  // binary rain
+  const rain = document.getElementById('rain');
+  const cols = 30;
+  for (let i = 0; i < cols; i++) {
+    const span = document.createElement('span');
+    let txt = '';
+    for (let j = 0; j < 25; j++) txt += Math.random() > 0.5 ? '1' : '0';
+    span.textContent = txt;
+    span.style.left = Math.random() * 100 + '%';
+    span.style.animationDuration = (8 + Math.random() * 10) + 's';
+    span.style.animationDelay = -Math.random() * 10 + 's';
+    span.style.fontSize = (10 + Math.random() * 8) + 'px';
+    rain.appendChild(span);
+  }
+
+  // tasks
+  const tasks = document.querySelectorAll('.task');
+  const countEl = document.getElementById('count');
+  const progressEl = document.getElementById('progress');
+  const submitBtn = document.getElementById('submit');
+  const handleInput = document.getElementById('handle');
+  const walletInput = document.getElementById('wallet');
+
+  function updateState() {
+    const done = document.querySelectorAll('.task.done').length;
+    const total = tasks.length;
+    countEl.textContent = `${done} / ${total}`;
+    progressEl.style.width = (done / total * 100) + '%';
+
+    const formOk = handleInput.value.trim().length > 1 && walletInput.value.trim().length > 5;
+    submitBtn.disabled = !(done === total && formOk);
+  }
+
+  tasks.forEach(task => {
+    const link = task.querySelector('.task-go');
+
+    // clicking the link starts a 3-second countdown then unlocks the task
+    link.addEventListener('click', () => {
+      if (task.classList.contains('counting')) return;
+      task.classList.add('counting');
+
+      const badge = task.querySelector('.countdown-badge');
+      let n = 3;
+
+      function tick() {
+        badge.classList.remove('go');
+        void badge.offsetWidth;
+        badge.textContent = n;
+        badge.classList.add('visible');
+
+        if (n === 0) {
+          badge.textContent = '✓';
+          badge.classList.add('go');
+          setTimeout(() => {
+            badge.classList.remove('visible', 'go');
+            task.classList.remove('counting');
+            if (task.classList.contains('locked')) {
+              task.classList.remove('locked');
+              task.classList.add('unlocked');
+            }
+          }, 600);
+          return;
+        }
+        n--;
+        setTimeout(tick, 1000);
+      }
+      tick();
+    });
+
+    // clicking the task itself
+    task.addEventListener('click', (e) => {
+      if (e.target.classList.contains('task-go')) return; // link handled above
+
+      if (task.classList.contains('locked')) {
+        // shake + show hint
+        task.classList.remove('shake');
+        void task.offsetWidth; // restart animation
+        task.classList.add('shake');
+        setTimeout(() => task.classList.remove('shake'), 1500);
+        return;
+      }
+
+      task.classList.toggle('done');
+      if (task.classList.contains('done')) {
+        task.classList.remove('unlocked');
+        confetti(task);
+      } else {
+        task.classList.add('unlocked');
+      }
+      updateState();
+    });
+  });
+
+  [handleInput, walletInput].forEach(i => i.addEventListener('input', updateState));
+
+  // confetti from task center
+  function confetti(el) {
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + 30;
+    const cy = rect.top + rect.height / 2;
+    const colors = ['#ff6b9d', '#00ffa3', '#f5b800', '#1a1410'];
+    for (let i = 0; i < 14; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = cx + 'px';
+      c.style.top = cy + 'px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      c.style.setProperty('--tx', (Math.random() - 0.5) * 200 + 'px');
+      c.style.setProperty('--ty', (Math.random() - 0.5) * 200 - 50 + 'px');
+      c.style.setProperty('--r', Math.random() * 720 + 'deg');
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 1300);
+    }
+  }
+
+  submitBtn.addEventListener('click', async () => {
+    if (submitBtn.disabled) return;
+
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'SUBMITTING...';
+
+    const payload = {
+      handle: handleInput.value.trim(),
+      wallet: walletInput.value.trim(),
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+    };
+
+    try {
+      if (!WEBHOOK_URL || WEBHOOK_URL.includes('PASTE_YOUR')) {
+        throw new Error('Webhook URL not configured');
+      }
+
+      // no-cors mode lets us POST to Apps Script without CORS headaches.
+      // we won't get a response back, but the data will arrive in the sheet.
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+      });
+
+      submitBtn.textContent = 'APPLICATION SUBMITTED 🐰';
+      submitBtn.classList.add('success');
+
+      // big confetti burst
+      const rect = submitBtn.getBoundingClientRect();
+      const fakeEl = { getBoundingClientRect: () => ({ left: rect.left + rect.width/2 - 30, top: rect.top, height: 0 }) };
+      for (let i = 0; i < 3; i++) setTimeout(() => confetti(fakeEl), i * 150);
+
+      // lock the form
+      handleInput.disabled = true;
+      walletInput.disabled = true;
+    } catch (err) {
+      console.error('Submission failed:', err);
+      submitBtn.textContent = 'SUBMIT FAILED — TRY AGAIN';
+      submitBtn.style.background = '#e54887';
+      submitBtn.style.color = '#fff';
+      submitBtn.disabled = false;
+      setTimeout(() => {
+        submitBtn.textContent = originalText;
+        submitBtn.style.background = '';
+        submitBtn.style.color = '';
+      }, 3000);
+    }
+  });
+</script>
+
+</body>
+</html>
